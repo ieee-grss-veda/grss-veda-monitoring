@@ -38,47 +38,68 @@ class Settings(BaseSettings):
 
     permissions_boundary_arn: str
 
-    # Github auth provider configuration
-    github_oauth_secret_name: Optional[str] = Field(
+    # Keycloak auth provider configuration
+    keycloak_oauth_secret_name: Optional[str] = Field(
         None,
         description=(
             "Name of AWS Secrets Manager Secret containing client_id and client_secret "
-            "of Github OAuth application"
+            "of Keycloak OAuth application"
         ),
-        alias="gh_oauth_secret_name",
+        alias="kc_oauth_secret_name",
     )
-    github_allowed_orgs: Optional[List[str]] = Field(
-        ["nasa-impact"],
+    keycloak_auth_url: str = Field(
         description=(
-            "List of comma- or space-separated organizations. User must be a member of "
-            "at least one organization to log in. If unset, all Github users will be "
-            "granted access. Used when using Github auth provider."
+            "Keycloak authentication URL. "
+            'Example: "https://keycloak.example.com/realms/myrealm/protocol/openid-connect/auth"'
         ),
-        alias="gh_allowed_orgs",
+        alias="kc_auth_url",
     )
-    github_admin_group: Optional[str] = Field(
+    keycloak_token_url: str = Field(
+        description=(
+            "Keycloak token URL. "
+            'Example: "https://keycloak.example.com/realms/myrealm/protocol/openid-connect/token"'
+        ),
+        alias="kc_token_url",
+    )
+    keycloak_api_url: str = Field(
+        description=(
+            "Keycloak user info URL. "
+            'Example: "https://keycloak.example.com/realms/myrealm/protocol/openid-connect/userinfo"'
+        ),
+        alias="kc_api_url",
+    )
+    keycloak_allowed_groups: Optional[List[str]] = Field(
         None,
         description=(
-            "Name of Github group. When user is a member of the group, they are granted "
-            'the ServerAdmin role. Example: "@my-org/my-group". Used when using Github '
-            "auth provider."
+            "List of comma- or space-separated Keycloak groups. User must be a member of "
+            "at least one group to log in. If unset, all authenticated users will be "
+            "granted access. Used when using Keycloak auth provider."
         ),
-        alias="gh_admin_group",
+        alias="kc_allowed_groups",
     )
-    github_editor_group: Optional[str] = Field(
+    keycloak_admin_group: Optional[str] = Field(
         None,
         description=(
-            "Name of Github group. When user is a member of the group, they are granted "
-            'the Editor role. Example: "@my-org/my-group". Used when using Github '
+            "Name of Keycloak group. When user is a member of the group, they are granted "
+            'the GrafanaAdmin role. Example: "grafana-admins". Used when using Keycloak '
             "auth provider."
         ),
-        alias="gh_editor_group",
+        alias="kc_admin_group",
+    )
+    keycloak_editor_group: Optional[str] = Field(
+        None,
+        description=(
+            "Name of Keycloak group. When user is a member of the group, they are granted "
+            'the Editor role. Example: "grafana-editors". Used when using Keycloak '
+            "auth provider."
+        ),
+        alias="kc_editor_group",
     )
     default_user_role: Optional[GrafanaRoles] = Field(
         GrafanaRoles.viewer,
         description=(
-            "Role assigned to users who are not members of the specified Github admin "
-            "group. Used when using Github auth provider."
+            "Role assigned to users who are not members of the specified Keycloak admin "
+            "or editor groups. Used when using Keycloak auth provider."
         ),
     )
 
@@ -135,7 +156,7 @@ class Settings(BaseSettings):
             region=self.cdk_deploy_region,
         )
 
-    @validator("github_allowed_orgs", pre=True)
+    @validator("keycloak_allowed_groups", pre=True)
     def split_comma_separated(cls, v: object) -> object:
         if isinstance(v, str):
             v = v.strip()
