@@ -63,5 +63,5 @@ jobs:
 
       - name: Deploy
         run: |
-          npx cdk deploy GHGC-grafana-${{ vars.STAGE }} \
+          npx cdk deploy GRSS-VEDA-grafana-${{ vars.STAGE }} \
             --require-approval never

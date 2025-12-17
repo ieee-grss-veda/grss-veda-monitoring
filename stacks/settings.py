@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     vpc_id: str
 
-    project: Optional[str] = "GHGC"
+    project: Optional[str] = "GRSS-VEDA"
     grafana_domain_name: Optional[str] = None
 
     grafana_certificate_arn: Optional[str] = None
@@ -120,7 +120,7 @@ class Settings(BaseSettings):
     )
     namespace_name: str = Field(
         description="Name of the private namespace to use for service discovery",
-        default="GHGC.internal",
+        default="GRSS-VEDA.internal",
     )
 
     honeycomb_api_key: str
