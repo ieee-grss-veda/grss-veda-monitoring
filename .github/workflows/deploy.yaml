@@ -40,7 +40,7 @@ jobs:
       STAGE: ${{ vars.STAGE }}
       PERMISSIONS_BOUNDARY_ARN: ${{ vars.PERMISSIONS_BOUNDARY_ARN }}
       PROJECT_NAME: ${{ vars.PROJECT_NAME }}
-      HONEYCOMB_API_KEY: ${{ secrets.HONEYCOMB_API_KEY }}
+      # HONEYCOMB_API_KEY: ${{ secrets.HONEYCOMB_API_KEY }}
 
     steps:
       - name: Checkout

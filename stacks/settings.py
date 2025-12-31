@@ -123,7 +123,7 @@ class Settings(BaseSettings):
         default="GRSS-VEDA.internal",
     )
 
-    honeycomb_api_key: str
+    # honeycomb_api_key: str
 
     trace_exporters: str = Field(
         description="Where to export trace data in opentelemetry collector",

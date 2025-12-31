@@ -172,10 +172,10 @@ processors:
         action: delete
 
 exporters:
-  otlp:
-    endpoint: "api.honeycomb.io:443"
-    headers:
-      "x-honeycomb-team": "##HONEYCOMB_API_KEY##"
+  # otlp:
+  #   endpoint: "api.honeycomb.io:443"
+  #   headers:
+  #     "x-honeycomb-team": "##HONEYCOMB_API_KEY##"
   logging:
     verbosity: detailed
   awsxray:
