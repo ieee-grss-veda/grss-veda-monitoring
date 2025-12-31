@@ -18,6 +18,8 @@ class GrafanaRoles(str, Enum):
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=os.environ.get("DOTENV", ".env"),
+        env_file_encoding="utf-8",
+        case_sensitive=False,
         extra="ignore",
     )
 
@@ -26,7 +28,9 @@ class Settings(BaseSettings):
         default_factory=getuser,
     )
 
-    vpc_id: str
+    vpc_id: str = Field(
+        description="VPC ID where resources will be deployed"
+    )
 
     project: Optional[str] = "GRSS-VEDA"
     grafana_domain_name: Optional[str] = None
@@ -35,8 +39,9 @@ class Settings(BaseSettings):
 
     cloudfront_certificate_arn: Optional[str] = None
 
-
-    permissions_boundary_arn: str
+    permissions_boundary_arn: str = Field(
+        description="ARN of the IAM permissions boundary policy to apply to all roles"
+    )
 
     # Keycloak auth provider configuration
     keycloak_config_secret_arn: Optional[str] = Field(

@@ -57,6 +57,16 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          VPC_ID=${{ vars.VPC_ID }}
+          PERMISSIONS_BOUNDARY_ARN=${{ vars.PERMISSIONS_BOUNDARY_ARN }}
+          STAGE=${{ vars.STAGE }}
+          PROJECT=${{ vars.PROJECT_NAME }}
+          KC_CONFIG_SECRET_ARN=${{ vars.KC_CONFIG_SECRET_ARN }}
+          EOF
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
