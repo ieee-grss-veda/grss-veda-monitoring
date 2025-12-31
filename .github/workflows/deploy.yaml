@@ -65,6 +65,7 @@ jobs:
           STAGE=${{ vars.STAGE }}
           PROJECT=${{ vars.PROJECT_NAME }}
           KC_CONFIG_SECRET_ARN=${{ vars.KC_CONFIG_SECRET_ARN }}
+          CLOUDFRONT_CERTIFICATE_ARN=${{ vars.CLOUDFRONT_CERTIFICATE_ARN }}
           EOF
 
       - name: Configure AWS credentials
