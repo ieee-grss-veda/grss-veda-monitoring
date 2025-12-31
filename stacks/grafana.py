@@ -144,7 +144,7 @@ class GrafanaStack(Stack):
             load_balancer=load_balancer,
             task_subnets=ec2.SubnetSelection(
                 one_per_az=True,
-                subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
             ),
             service_name="grafana",
             desired_count=1,
