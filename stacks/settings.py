@@ -39,61 +39,15 @@ class Settings(BaseSettings):
     permissions_boundary_arn: str
 
     # Keycloak auth provider configuration
-    keycloak_oauth_secret_name: Optional[str] = Field(
+    keycloak_config_secret_arn: Optional[str] = Field(
         None,
         description=(
-            "Name of AWS Secrets Manager Secret containing client_id and client_secret "
-            "of Keycloak OAuth application"
+            "ARN of AWS Secrets Manager Secret containing all Keycloak configuration. "
+            "The secret should be a JSON object with keys: client_id, client_secret, "
+            "auth_url, token_url, api_url, allowed_groups (optional), admin_group (optional), "
+            "editor_group (optional)."
         ),
-        alias="kc_oauth_secret_name",
-    )
-    keycloak_auth_url: str = Field(
-        description=(
-            "Keycloak authentication URL. "
-            'Example: "https://keycloak.example.com/realms/myrealm/protocol/openid-connect/auth"'
-        ),
-        alias="kc_auth_url",
-    )
-    keycloak_token_url: str = Field(
-        description=(
-            "Keycloak token URL. "
-            'Example: "https://keycloak.example.com/realms/myrealm/protocol/openid-connect/token"'
-        ),
-        alias="kc_token_url",
-    )
-    keycloak_api_url: str = Field(
-        description=(
-            "Keycloak user info URL. "
-            'Example: "https://keycloak.example.com/realms/myrealm/protocol/openid-connect/userinfo"'
-        ),
-        alias="kc_api_url",
-    )
-    keycloak_allowed_groups: Optional[List[str]] = Field(
-        None,
-        description=(
-            "List of comma- or space-separated Keycloak groups. User must be a member of "
-            "at least one group to log in. If unset, all authenticated users will be "
-            "granted access. Used when using Keycloak auth provider."
-        ),
-        alias="kc_allowed_groups",
-    )
-    keycloak_admin_group: Optional[str] = Field(
-        None,
-        description=(
-            "Name of Keycloak group. When user is a member of the group, they are granted "
-            'the GrafanaAdmin role. Example: "grafana-admins". Used when using Keycloak '
-            "auth provider."
-        ),
-        alias="kc_admin_group",
-    )
-    keycloak_editor_group: Optional[str] = Field(
-        None,
-        description=(
-            "Name of Keycloak group. When user is a member of the group, they are granted "
-            'the Editor role. Example: "grafana-editors". Used when using Keycloak '
-            "auth provider."
-        ),
-        alias="kc_editor_group",
+        alias="kc_config_secret_arn",
     )
     default_user_role: Optional[GrafanaRoles] = Field(
         GrafanaRoles.viewer,
@@ -156,9 +110,3 @@ class Settings(BaseSettings):
             region=self.cdk_deploy_region,
         )
 
-    @validator("keycloak_allowed_groups", pre=True)
-    def split_comma_separated(cls, v: object) -> object:
-        if isinstance(v, str):
-            v = v.strip()
-            return [] if v == "" else v.split(",")
-        return v

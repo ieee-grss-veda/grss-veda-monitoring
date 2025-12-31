@@ -42,6 +42,9 @@ jobs:
       PROJECT_NAME: ${{ vars.PROJECT_NAME }}
       # HONEYCOMB_API_KEY: ${{ secrets.HONEYCOMB_API_KEY }}
 
+      # Keycloak OAuth Configuration (stored in AWS Secrets Manager)
+      KC_CONFIG_SECRET_ARN: ${{ vars.KC_CONFIG_SECRET_ARN }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3

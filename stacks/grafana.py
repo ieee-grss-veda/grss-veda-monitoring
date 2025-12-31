@@ -95,17 +95,11 @@ class GrafanaStack(Stack):
                 else f"https://{distro.distribution_domain_name}"
             ),
         }
-        if settings.keycloak_oauth_secret_name:
+        if settings.keycloak_config_secret_arn:
             env.update(
                 self.keycloak_oauth_settings(
-                    auth_url=settings.keycloak_auth_url,
-                    token_url=settings.keycloak_token_url,
-                    api_url=settings.keycloak_api_url,
-                    allowed_groups=settings.keycloak_allowed_groups,
-                    admin_group=settings.keycloak_admin_group,
-                    editor_group=settings.keycloak_editor_group,
                     default_role=settings.default_user_role,
-                    oauth_secret_name=settings.keycloak_oauth_secret_name,
+                    config_secret_arn=settings.keycloak_config_secret_arn,
                 )
             )
         for k, v in env.items():
@@ -333,60 +327,49 @@ class GrafanaStack(Stack):
         )
     def keycloak_oauth_settings(
         self,
-        auth_url: str,
-        token_url: str,
-        api_url: str,
-        allowed_groups: Optional[Sequence[str]],
-        admin_group: Optional[str],
-        editor_group: Optional[str],
         default_role: GrafanaRoles,
-        oauth_secret_name: str,
+        config_secret_arn: str,
     ) -> EcsEnv:
         """
-        Generate settings to configure Grafana to authenticate with Keycloak OAuth application
+        Generate settings to configure Grafana to authenticate with Keycloak OAuth application.
+        All configuration (URLs, client credentials, groups) is read from AWS Secrets Manager.
         """
-        oauth_details = secretsmanager.Secret.from_secret_name_v2(
+        config_secret = secretsmanager.Secret.from_secret_complete_arn(
             self,
-            "oauth-secret-kc",
-            oauth_secret_name,
+            "keycloak-config-secret",
+            config_secret_arn,
         )
+
+        # Build role attribute path that checks admin_group and editor_group from the secret
+        # The path will be evaluated at runtime by Grafana with the actual group values
         role_attr_path = (
-            # Admin Group
-            f"contains(groups[*], {admin_group!r}) && {GrafanaRoles.grafana_admin.value!r} "
-            +
-            # Editor Group
-            (
-                f"|| contains(groups[*], {editor_group!r}) && {GrafanaRoles.editor.value!r} "
-                if editor_group
-                else ""
-            )
-            +
-            # Default Role
+            # If admin_group is set and user is in that group, assign GrafanaAdmin
+            f"(admin_group != '' && contains(groups[*], admin_group)) && {GrafanaRoles.grafana_admin.value!r} "
+            # If editor_group is set and user is in that group, assign Editor
+            f"|| (editor_group != '' && contains(groups[*], editor_group)) && {GrafanaRoles.editor.value!r} "
+            # Otherwise assign default role
             f"|| {default_role.value!r}"
         )
+
         keycloak_settings: EcsEnv = {
-            # Customized
+            # OAuth client credentials (from secret)
+            "client_id": ecs.Secret.from_secrets_manager(config_secret, "client_id"),
+            "client_secret": ecs.Secret.from_secrets_manager(config_secret, "client_secret"),
+
+            # Keycloak URLs (from secret)
+            "auth_url": ecs.Secret.from_secrets_manager(config_secret, "auth_url"),
+            "token_url": ecs.Secret.from_secrets_manager(config_secret, "token_url"),
+            "api_url": ecs.Secret.from_secrets_manager(config_secret, "api_url"),
+
+            # Group configuration (from secret, optional fields)
+            "allowed_groups": ecs.Secret.from_secrets_manager(config_secret, "allowed_groups"),
             "role_attribute_path": role_attr_path,
-            "client_id": ecs.Secret.from_secrets_manager(
-                oauth_details,
-                "client_id",
-            ),
-            "client_secret": ecs.Secret.from_secrets_manager(
-                oauth_details,
-                "client_secret",
-            ),
-            # Standard
+
+            # Standard Grafana OAuth settings
             "enabled": "true",
             "auto_login": "true",
-            "auth_url": auth_url,
-            "token_url": token_url,
-            "api_url": api_url,
             "scopes": "openid profile email",
         }
-
-        # Add allowed groups if specified
-        if allowed_groups:
-            keycloak_settings["allowed_groups"] = ",".join(allowed_groups)
 
         return {
             envify(f"auth.generic_oauth.{key}"): value
