@@ -340,15 +340,14 @@ class GrafanaStack(Stack):
             config_secret_arn,
         )
 
-        # Build role attribute path that checks admin_group and editor_group from the secret
-        # The path will be evaluated at runtime by Grafana with the actual group values
+        # Build role attribute path using JMESPath syntax
+        # Note: We can't reference admin_group/editor_group from the secret in JMESPath,
+        # so we need to hardcode the group names here or use a simpler approach
+        # For now, check if user is in 'grafana-admins' or 'grafana-editors' groups
         role_attr_path = (
-            # If admin_group is set and user is in that group, assign GrafanaAdmin
-            f"(admin_group != '' && contains(groups[*], admin_group)) && {GrafanaRoles.grafana_admin.value!r} "
-            # If editor_group is set and user is in that group, assign Editor
-            f"|| (editor_group != '' && contains(groups[*], editor_group)) && {GrafanaRoles.editor.value!r} "
-            # Otherwise assign default role
-            f"|| {default_role.value!r}"
+            f"contains(groups[*], 'grafana-admins') && '{GrafanaRoles.grafana_admin.value}' "
+            f"|| contains(groups[*], 'grafana-editors') && '{GrafanaRoles.editor.value}' "
+            f"|| '{default_role.value}'"
         )
 
         keycloak_settings: EcsEnv = {
@@ -366,9 +365,11 @@ class GrafanaStack(Stack):
             "role_attribute_path": role_attr_path,
 
             # Standard Grafana OAuth settings
+            "name": "Keycloak",
             "enabled": "true",
             "auto_login": "true",
-            "scopes": "openid profile email",
+            "scopes": "openid profile email groups",
+            "groups_attribute_path": "groups",
         }
 
         return {
