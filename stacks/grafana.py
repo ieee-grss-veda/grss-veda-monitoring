@@ -343,10 +343,10 @@ class GrafanaStack(Stack):
         # Build role attribute path using JMESPath syntax
         # Note: We can't reference admin_group/editor_group from the secret in JMESPath,
         # so we need to hardcode the group names here or use a simpler approach
-        # For now, check if user is in 'grafana-admins' or 'grafana-editors' groups
+        # For now, check if user is in 'Grafana Admins' or 'Grafana Editors' groups
         role_attr_path = (
-            f"contains(groups[*], 'grafana-admins') && '{GrafanaRoles.grafana_admin.value}' "
-            f"|| contains(groups[*], 'grafana-editors') && '{GrafanaRoles.editor.value}' "
+            f"contains(groups[*], 'Grafana Admins') && '{GrafanaRoles.grafana_admin.value}' "
+            f"|| contains(groups[*], 'Grafana Editors') && '{GrafanaRoles.editor.value}' "
             f"|| '{default_role.value}'"
         )
 
