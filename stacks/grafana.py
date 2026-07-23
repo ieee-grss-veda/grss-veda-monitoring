@@ -95,14 +95,11 @@ class GrafanaStack(Stack):
                 else f"https://{distro.distribution_domain_name}"
             ),
         }
-        if settings.github_oauth_secret_name:
+        if settings.keycloak_config_secret_arn:
             env.update(
-                self.github_oauth_settings(
-                    allowed_orgs=settings.github_allowed_orgs,
-                    admin_group=settings.github_admin_group,
-                    editor_group=settings.github_editor_group,
+                self.keycloak_oauth_settings(
                     default_role=settings.default_user_role,
-                    oauth_secret_name=settings.github_oauth_secret_name,
+                    config_secret_arn=settings.keycloak_config_secret_arn,
                 )
             )
         for k, v in env.items():
@@ -147,7 +144,7 @@ class GrafanaStack(Stack):
             load_balancer=load_balancer,
             task_subnets=ec2.SubnetSelection(
                 one_per_az=True,
-                subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
             ),
             service_name="grafana",
             desired_count=1,
@@ -328,56 +325,54 @@ class GrafanaStack(Stack):
             domain_names=[domain_name] if domain_name else [],
             certificate=certificate,
         )
-    def github_oauth_settings(
+    def keycloak_oauth_settings(
         self,
-        allowed_orgs: Sequence[str],
-        admin_group: Optional[str],
-        editor_group: Optional[str],
         default_role: GrafanaRoles,
-        oauth_secret_name: str,
+        config_secret_arn: str,
     ) -> EcsEnv:
         """
-        Generate settings to configure Grafana to authenticate with Github OAuth application
+        Generate settings to configure Grafana to authenticate with Keycloak OAuth application.
+        All configuration (URLs, client credentials, groups) is read from AWS Secrets Manager.
         """
-        oauth_details = secretsmanager.Secret.from_secret_name_v2(
+        config_secret = secretsmanager.Secret.from_secret_complete_arn(
             self,
-            "oauth-secret-gh",
-            oauth_secret_name,
+            "keycloak-config-secret",
+            config_secret_arn,
         )
+
+        # Build role attribute path using JMESPath syntax
+        # Note: We can't reference admin_group/editor_group from the secret in JMESPath,
+        # so we need to hardcode the group names here or use a simpler approach
+        # For now, check if user is in 'Grafana Admins' or 'Grafana Editors' groups
         role_attr_path = (
-            # Admin Group
-            f"contains(groups[*], {admin_group!r}) && {GrafanaRoles.grafana_admin.value!r} "
-            +
-            # Editor Group
-            (
-                f"|| contains(groups[*], {editor_group!r}) && {GrafanaRoles.editor.value!r} "
-                if editor_group
-                else ""
-            )
-            +
-            # Default Role
-            f"|| {default_role.value!r}"
+            f"contains(groups[*], 'Grafana Admins') && '{GrafanaRoles.grafana_admin.value}' "
+            f"|| contains(groups[*], 'Grafana Editors') && '{GrafanaRoles.editor.value}' "
+            f"|| '{default_role.value}'"
         )
-        github_settings: EcsEnv = {
-            # Customized
-            "allowed_organizations": ",".join(allowed_orgs),
+
+        keycloak_settings: EcsEnv = {
+            # OAuth client credentials (from secret)
+            "client_id": ecs.Secret.from_secrets_manager(config_secret, "client_id"),
+            "client_secret": ecs.Secret.from_secrets_manager(config_secret, "client_secret"),
+
+            # Keycloak URLs (from secret)
+            "auth_url": ecs.Secret.from_secrets_manager(config_secret, "auth_url"),
+            "token_url": ecs.Secret.from_secrets_manager(config_secret, "token_url"),
+            "api_url": ecs.Secret.from_secrets_manager(config_secret, "api_url"),
+
+            # Group configuration (from secret, optional fields)
+            "allowed_groups": ecs.Secret.from_secrets_manager(config_secret, "allowed_groups"),
             "role_attribute_path": role_attr_path,
-            "client_id": ecs.Secret.from_secrets_manager(
-                oauth_details,
-                "client_id",
-            ),
-            "client_secret": ecs.Secret.from_secrets_manager(
-                oauth_details,
-                "client_secret",
-            ),
-            # Standard
+
+            # Standard Grafana OAuth settings
+            "name": "Keycloak",
             "enabled": "true",
             "auto_login": "true",
-            "auth_url": "https://github.com/login/oauth/authorize",
-            "token_url": "https://github.com/login/oauth/access_token",
-            "api_url": "https://api.github.com/user",
+            "scopes": "openid profile email groups",
+            "groups_attribute_path": "groups",
         }
+
         return {
-            envify(f"auth.github.{key}"): value
-            for key, value in github_settings.items()
+            envify(f"auth.generic_oauth.{key}"): value
+            for key, value in keycloak_settings.items()
         }

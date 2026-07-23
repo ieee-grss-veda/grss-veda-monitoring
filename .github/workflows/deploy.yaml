@@ -40,7 +40,10 @@ jobs:
       STAGE: ${{ vars.STAGE }}
       PERMISSIONS_BOUNDARY_ARN: ${{ vars.PERMISSIONS_BOUNDARY_ARN }}
       PROJECT_NAME: ${{ vars.PROJECT_NAME }}
-      HONEYCOMB_API_KEY: ${{ secrets.HONEYCOMB_API_KEY }}
+      # HONEYCOMB_API_KEY: ${{ secrets.HONEYCOMB_API_KEY }}
+
+      # Keycloak OAuth Configuration (stored in AWS Secrets Manager)
+      KC_CONFIG_SECRET_ARN: ${{ vars.KC_CONFIG_SECRET_ARN }}
 
     steps:
       - name: Checkout
@@ -54,6 +57,19 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          VPC_ID=${{ vars.VPC_ID }}
+          PERMISSIONS_BOUNDARY_ARN=${{ vars.PERMISSIONS_BOUNDARY_ARN }}
+          STAGE=${{ vars.STAGE }}
+          PROJECT=${{ vars.PROJECT_NAME }}
+          KC_CONFIG_SECRET_ARN=${{ vars.KC_CONFIG_SECRET_ARN }}
+          CLOUDFRONT_CERTIFICATE_ARN=${{ vars.CLOUDFRONT_CERTIFICATE_ARN }}
+          GRAFANA_CERTIFICATE_ARN=${{ vars.GRAFANA_CERTIFICATE_ARN }}
+          GRAFANA_DOMAIN_NAME=${{ vars.GRAFANA_DOMAIN_NAME }}
+          EOF
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -63,5 +79,5 @@ jobs:
 
       - name: Deploy
         run: |
-          npx cdk deploy GHGC-grafana-${{ vars.STAGE }} \
+          npx cdk deploy GRSS-VEDA-grafana-${{ vars.STAGE }} \
             --require-approval never
