@@ -1,0 +1,356 @@
+{
+  "uid": "website-analytics-rum",
+  "title": "Website Analytics (RUM)",
+  "tags": ["rum", "website", "provisioned"],
+  "timezone": "browser",
+  "editable": false,
+  "schemaVersion": 38,
+  "refresh": "5m",
+  "time": { "from": "now-7d", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "monitor",
+        "label": "RUM App Monitor",
+        "type": "query",
+        "datasource": "CloudWatch",
+        "refresh": 2,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "query": {
+          "queryType": "dimensionValues",
+          "namespace": "AWS/RUM",
+          "metricName": "PageViewCount",
+          "dimensionKey": "application_name",
+          "dimensionFilters": {},
+          "region": "default",
+          "refId": "RumMonitorVariable"
+        }
+      },
+      {
+        "name": "loggroup",
+        "label": "RUM Log Group",
+        "type": "query",
+        "datasource": "CloudWatch",
+        "refresh": 2,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "query": {
+          "queryType": "logGroups",
+          "logGroupPrefix": "RUMService_",
+          "region": "default",
+          "refId": "RumLogGroupVariable"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Page views & sessions",
+      "type": "timeseries",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "bars", "fillOpacity": 60 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/RUM",
+          "metricName": "PageViewCount",
+          "dimensions": { "application_name": "$monitor" },
+          "statistic": "Sum",
+          "period": "",
+          "region": "default",
+          "label": "Page views"
+        },
+        {
+          "refId": "B",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/RUM",
+          "metricName": "SessionCount",
+          "dimensions": { "application_name": "$monitor" },
+          "statistic": "Sum",
+          "period": "",
+          "region": "default",
+          "label": "Sessions"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Unique visitors over time",
+      "type": "timeseries",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "bars", "fillOpacity": 60 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Logs",
+          "region": "default",
+          "logGroups": [{ "arn": "$loggroup", "name": "$loggroup" }],
+          "logGroupNames": ["$loggroup"],
+          "expression": "filter event_type = \"com.amazon.rum.page_view_event\" | stats count_distinct(user_details.userId) as visitors by bin(1h)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Sessions by country",
+      "type": "table",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Logs",
+          "region": "default",
+          "logGroups": [{ "arn": "$loggroup", "name": "$loggroup" }],
+          "logGroupNames": ["$loggroup"],
+          "expression": "fields metadata.countryCode as country | filter event_type = \"com.amazon.rum.session_start_event\" | stats count(*) as sessions by country | sort sessions desc | limit 25",
+          "statsGroups": ["country"]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Top pages",
+      "type": "table",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Logs",
+          "region": "default",
+          "logGroups": [{ "arn": "$loggroup", "name": "$loggroup" }],
+          "logGroupNames": ["$loggroup"],
+          "expression": "fields event_details.pageId as page | filter event_type = \"com.amazon.rum.page_view_event\" | stats count(*) as views by page | sort views desc | limit 20",
+          "statsGroups": ["page"]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Browsers",
+      "type": "table",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 17 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Logs",
+          "region": "default",
+          "logGroups": [{ "arn": "$loggroup", "name": "$loggroup" }],
+          "logGroupNames": ["$loggroup"],
+          "expression": "fields metadata.browserName as browser | filter event_type = \"com.amazon.rum.session_start_event\" | stats count(*) as sessions by browser | sort sessions desc",
+          "statsGroups": ["browser"]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Devices",
+      "type": "table",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 17 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Logs",
+          "region": "default",
+          "logGroups": [{ "arn": "$loggroup", "name": "$loggroup" }],
+          "logGroupNames": ["$loggroup"],
+          "expression": "fields metadata.deviceType as device | filter event_type = \"com.amazon.rum.session_start_event\" | stats count(*) as sessions by device | sort sessions desc",
+          "statsGroups": ["device"]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Client errors",
+      "type": "timeseries",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 17 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "bars", "fillOpacity": 60 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/RUM",
+          "metricName": "JsErrorCount",
+          "dimensions": { "application_name": "$monitor" },
+          "statistic": "Sum",
+          "period": "",
+          "region": "default",
+          "label": "JS errors"
+        },
+        {
+          "refId": "B",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/RUM",
+          "metricName": "HttpErrorCount",
+          "dimensions": { "application_name": "$monitor" },
+          "statistic": "Sum",
+          "period": "",
+          "region": "default",
+          "label": "HTTP errors"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Largest Contentful Paint (avg)",
+      "type": "stat",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 25 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 2500 },
+              { "color": "red", "value": 4000 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/RUM",
+          "metricName": "WebVitalsLargestContentfulPaint",
+          "dimensions": { "application_name": "$monitor" },
+          "statistic": "Average",
+          "period": "",
+          "region": "default",
+          "label": "LCP"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Cumulative Layout Shift (avg)",
+      "type": "stat",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 25 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.1 },
+              { "color": "red", "value": 0.25 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/RUM",
+          "metricName": "WebVitalsCumulativeLayoutShift",
+          "dimensions": { "application_name": "$monitor" },
+          "statistic": "Average",
+          "period": "",
+          "region": "default",
+          "label": "CLS"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "First Input Delay (avg)",
+      "type": "stat",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 25 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 100 },
+              { "color": "red", "value": 300 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/RUM",
+          "metricName": "WebVitalsFirstInputDelay",
+          "dimensions": { "application_name": "$monitor" },
+          "statistic": "Average",
+          "period": "",
+          "region": "default",
+          "label": "FID"
+        }
+      ]
+    }
+  ]
+}

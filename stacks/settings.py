@@ -102,6 +102,14 @@ class Settings(BaseSettings):
         default="GHGC.internal",
     )
 
+    monitoring_website_domain: Optional[str] = Field(
+        None,
+        description=(
+            "Top-level domain of the website to monitor with CloudWatch RUM, "
+            "e.g. 'example.com'. When unset, the RUM stack is not deployed."
+        ),
+    )
+
     honeycomb_api_key: str
 
     trace_exporters: str = Field(
@@ -127,6 +135,10 @@ class Settings(BaseSettings):
     @property
     def otel_stack_name(self) -> str:
         return self.stack_name("otel")
+
+    @property
+    def rum_stack_name(self) -> str:
+        return self.stack_name("rum")
 
     @property
     def env(self) -> aws_cdk.Environment:

@@ -1,0 +1,288 @@
+{
+  "uid": "amplify-hosting-traffic",
+  "title": "Amplify Hosting — Traffic",
+  "tags": ["amplify", "website", "provisioned"],
+  "timezone": "browser",
+  "editable": false,
+  "schemaVersion": 38,
+  "refresh": "5m",
+  "time": { "from": "now-7d", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "app",
+        "label": "Amplify App",
+        "type": "query",
+        "datasource": "CloudWatch",
+        "refresh": 2,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "query": {
+          "queryType": "dimensionValues",
+          "namespace": "AWS/AmplifyHosting",
+          "metricName": "Requests",
+          "dimensionKey": "App",
+          "dimensionFilters": {},
+          "region": "default",
+          "refId": "AmplifyAppVariable"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Requests",
+      "type": "timeseries",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "bars", "fillOpacity": 60 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/AmplifyHosting",
+          "metricName": "Requests",
+          "dimensions": { "App": "$app" },
+          "statistic": "Sum",
+          "period": "",
+          "region": "default",
+          "label": "Requests"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Error rate",
+      "type": "timeseries",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "custom": { "drawStyle": "line", "fillOpacity": 10 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "requests",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/AmplifyHosting",
+          "metricName": "Requests",
+          "dimensions": { "App": "$app" },
+          "statistic": "Sum",
+          "period": "",
+          "region": "default",
+          "id": "requests",
+          "hide": true
+        },
+        {
+          "refId": "errors4xx",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/AmplifyHosting",
+          "metricName": "4xxErrors",
+          "dimensions": { "App": "$app" },
+          "statistic": "Sum",
+          "period": "",
+          "region": "default",
+          "id": "errors4xx",
+          "hide": true
+        },
+        {
+          "refId": "errors5xx",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/AmplifyHosting",
+          "metricName": "5xxErrors",
+          "dimensions": { "App": "$app" },
+          "statistic": "Sum",
+          "period": "",
+          "region": "default",
+          "id": "errors5xx",
+          "hide": true
+        },
+        {
+          "refId": "errorRate",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 1,
+          "expression": "100 * (errors4xx + errors5xx) / requests",
+          "label": "Error rate",
+          "period": "",
+          "region": "default",
+          "id": "errorRate"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "4xx / 5xx errors",
+      "type": "timeseries",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "4xx" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "5xx" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/AmplifyHosting",
+          "metricName": "4xxErrors",
+          "dimensions": { "App": "$app" },
+          "statistic": "Sum",
+          "period": "",
+          "region": "default",
+          "label": "4xx"
+        },
+        {
+          "refId": "B",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/AmplifyHosting",
+          "metricName": "5xxErrors",
+          "dimensions": { "App": "$app" },
+          "statistic": "Sum",
+          "period": "",
+          "region": "default",
+          "label": "5xx"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Latency",
+      "type": "timeseries",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/AmplifyHosting",
+          "metricName": "Latency",
+          "dimensions": { "App": "$app" },
+          "statistic": "Average",
+          "period": "",
+          "region": "default",
+          "label": "avg"
+        },
+        {
+          "refId": "B",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/AmplifyHosting",
+          "metricName": "Latency",
+          "dimensions": { "App": "$app" },
+          "statistic": "p99",
+          "period": "",
+          "region": "default",
+          "label": "p99"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Data transferred",
+      "type": "timeseries",
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": { "drawStyle": "bars", "fillOpacity": 60 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/AmplifyHosting",
+          "metricName": "BytesDownloaded",
+          "dimensions": { "App": "$app" },
+          "statistic": "Sum",
+          "period": "",
+          "region": "default",
+          "label": "Downloaded"
+        },
+        {
+          "refId": "B",
+          "datasource": "CloudWatch",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "namespace": "AWS/AmplifyHosting",
+          "metricName": "BytesUploaded",
+          "dimensions": { "App": "$app" },
+          "statistic": "Sum",
+          "period": "",
+          "region": "default",
+          "label": "Uploaded"
+        }
+      ]
+    }
+  ]
+}
