@@ -110,7 +110,7 @@ class RumStack(Stack):
         CfnOutput(
             self,
             "AppMonitorId",
-            value=app_monitor.ref,
+            value=app_monitor.attr_id,
             description="CloudWatch RUM app monitor ID (used in the JS snippet)",
         )
         CfnOutput(
