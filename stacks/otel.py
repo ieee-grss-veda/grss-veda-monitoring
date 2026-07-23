@@ -38,9 +38,12 @@ class OtelStack(Stack):
 
         with open("./otel/otel-config.yaml", "r") as otel_file:
             otel_config_raw_content = otel_file.read()
+            # otel_config_content = otel_config_raw_content.replace(
+            #     "##HONEYCOMB_API_KEY##", settings.honeycomb_api_key
+            # ).replace("##TRACE_EXPORTERS##", settings.trace_exporters)
             otel_config_content = otel_config_raw_content.replace(
-                "##HONEYCOMB_API_KEY##", settings.honeycomb_api_key
-            ).replace("##TRACE_EXPORTERS##", settings.trace_exporters)
+                "##TRACE_EXPORTERS##", settings.trace_exporters
+            )
             otel_config_hash = hashlib.sha256(otel_config_content.encode()).hexdigest()
 
         self.otel_config = ssm.StringParameter(

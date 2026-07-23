@@ -1,8 +1,8 @@
-# GHGC Monitoring System
+# GRSS VEDA Monitoring System
 
 ## Summary
 
-The purpose of this system is to manage the state of all applications within GHGC, by consolidating and tracking performance metrics and logs into actionable data and alerts.
+The purpose of this system is to manage the state of all applications within GRSS VEDA, by consolidating and tracking performance metrics and logs into actionable data and alerts.
 
 ## Design
 
