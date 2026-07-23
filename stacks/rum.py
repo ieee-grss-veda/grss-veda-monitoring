@@ -12,7 +12,7 @@ from .settings import Settings
 
 class RumStack(Stack):
     """
-    CloudWatch RUM app monitor for the GHGC website, along with the Cognito
+    CloudWatch RUM app monitor for the GRSS-VEDA website, along with the Cognito
     identity pool that allows anonymous browsers to submit RUM events.
 
     The stack outputs contain the values needed to render the JS snippet that

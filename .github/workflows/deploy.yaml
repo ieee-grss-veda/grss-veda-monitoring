@@ -68,6 +68,7 @@ jobs:
           CLOUDFRONT_CERTIFICATE_ARN=${{ vars.CLOUDFRONT_CERTIFICATE_ARN }}
           GRAFANA_CERTIFICATE_ARN=${{ vars.GRAFANA_CERTIFICATE_ARN }}
           GRAFANA_DOMAIN_NAME=${{ vars.GRAFANA_DOMAIN_NAME }}
+          MONITORING_WEBSITE_DOMAIN=${{ vars.MONITORING_WEBSITE_DOMAIN }}
           EOF
 
       - name: Configure AWS credentials
