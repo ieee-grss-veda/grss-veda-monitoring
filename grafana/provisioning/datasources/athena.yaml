@@ -5,3 +5,6 @@ datasources:
     jsonData:
       authType: default
       defaultRegion: $AWS_REGION
+      catalog: AwsDataCatalog
+      database: $ATHENA_DATABASE
+      workgroup: $ATHENA_WORKGROUP

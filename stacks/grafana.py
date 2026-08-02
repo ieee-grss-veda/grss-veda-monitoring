@@ -94,6 +94,10 @@ class GrafanaStack(Stack):
                 if settings.grafana_domain_name
                 else f"https://{distro.distribution_domain_name}"
             ),
+            # Consumed by the provisioned Athena datasource
+            # (grafana/provisioning/datasources/athena.yaml)
+            "ATHENA_WORKGROUP": settings.athena_workgroup_name,
+            "ATHENA_DATABASE": settings.glue_database_name,
         }
         if settings.keycloak_config_secret_arn:
             env.update(
