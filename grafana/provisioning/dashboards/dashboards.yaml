@@ -3,9 +3,12 @@ providers:
   - name: grss-veda-provisioned
     type: file
     folder: GRSS-VEDA
-    # Edits happen in this repo, not the UI, so git stays the source of truth
+    # Edits happen in this repo, not the UI, so git stays the source of truth.
+    # disableDeletion stays false so removing a JSON file here also removes the
+    # dashboard from Grafana; a dashboard deleted in the UI is restored on the
+    # next provisioning poll.
     allowUiUpdates: false
-    disableDeletion: true
+    disableDeletion: false
     updateIntervalSeconds: 60
     options:
       # Matches GF_PATHS_PROVISIONING set in grafana/Dockerfile
