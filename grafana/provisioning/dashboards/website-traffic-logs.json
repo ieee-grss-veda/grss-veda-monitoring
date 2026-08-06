@@ -6,7 +6,7 @@
   "editable": false,
   "schemaVersion": 38,
   "refresh": "",
-  "time": { "from": "now-90d", "to": "now" },
+  "time": { "from": "now-6M", "to": "now" },
   "templating": { "list": [] },
   "panels": [
     {
