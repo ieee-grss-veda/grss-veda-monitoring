@@ -130,7 +130,7 @@
     {
       "id": 8,
       "title": "Where visitors connect from",
-      "description": "Each marker is the CloudFront edge that served the requests, sized by volume. Edges sit near visitors but are not their exact location.",
+      "description": "Request density at the CloudFront edges that served visitors, weighted by volume. Edges sit near visitors but are not their exact location; see the table below for counts.",
       "type": "geomap",
       "datasource": "Athena",
       "gridPos": {
@@ -174,8 +174,8 @@
         },
         "layers": [
           {
-            "type": "markers",
-            "name": "Edge locations",
+            "type": "heatmap",
+            "name": "Request density",
             "tooltip": true,
             "location": {
               "mode": "lookup",
@@ -183,36 +183,14 @@
               "gazetteer": "public/gazetteer/airports.geojson"
             },
             "config": {
-              "showLegend": false,
-              "style": {
-                "color": {
-                  "fixed": "blue"
-                },
-                "opacity": 0.55,
-                "size": {
-                  "field": "requests",
-                  "fixed": 5,
-                  "min": 4,
-                  "max": 22
-                },
-                "symbol": {
-                  "mode": "fixed",
-                  "fixed": "img/icons/marker/circle.svg"
-                },
-                "rotation": {
-                  "mode": "mod",
-                  "fixed": 0,
-                  "min": -360,
-                  "max": 360
-                },
-                "textConfig": {
-                  "fontSize": 12,
-                  "offsetX": 0,
-                  "offsetY": 0,
-                  "textAlign": "center",
-                  "textBaseline": "middle"
-                }
-              }
+              "weight": {
+                "field": "requests",
+                "fixed": 1,
+                "min": 0,
+                "max": 1
+              },
+              "radius": 18,
+              "blur": 22
             }
           }
         ]
