@@ -1,5 +1,6 @@
 import aws_cdk as cdk
 
+from .access_logs import AccessLogsStack
 from .grafana import GrafanaStack
 from .otel import OtelStack
 from .settings import Settings
@@ -18,6 +19,13 @@ GrafanaStack(
 OtelStack(
     app,
     construct_id=settings.otel_stack_name,
+    settings=settings,
+    env=settings.env,
+)
+
+AccessLogsStack(
+    app,
+    construct_id=settings.access_logs_stack_name,
     settings=settings,
     env=settings.env,
 )

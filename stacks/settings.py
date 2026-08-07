@@ -109,6 +109,24 @@ class Settings(BaseSettings):
         return self.stack_name("otel")
 
     @property
+    def access_logs_stack_name(self) -> str:
+        return self.stack_name("access-logs")
+
+    @property
+    def access_logs_bucket_name(self) -> str:
+        # S3 bucket names must be lowercase
+        return f"{self.project}-access-logs-{self.stage}".lower()
+
+    @property
+    def glue_database_name(self) -> str:
+        # Glue database names must be lowercase without hyphens
+        return f"{self.project}_monitoring_{self.stage}".replace("-", "_").lower()
+
+    @property
+    def athena_workgroup_name(self) -> str:
+        return f"{self.project}-monitoring-{self.stage}"
+
+    @property
     def env(self) -> aws_cdk.Environment:
         return aws_cdk.Environment(
             account=self.cdk_deploy_account,

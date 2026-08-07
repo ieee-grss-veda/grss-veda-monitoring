@@ -1,0 +1,56 @@
+name: Fetch Amplify access logs
+
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  schedule:
+    # Weekly; fetches the last 9 days so consecutive runs overlap by ~2 days.
+    # Overlap-safe: dashboard queries de-duplicate on the request id.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment whose bucket receives the logs
+        type: environment
+        required: false
+      oldest:
+        description: "Backfill from this date (YYYY-MM-DD); default last 9 days"
+        type: string
+        required: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'development' }}
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.DEPLOYMENT_ROLE_ARN }}
+          role-session-name: gh-access-logs-fetch
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Fetch logs
+        env:
+          APP_ID: ${{ vars.AMPLIFY_APP_ID || 'd22mb05yrshldh' }}
+          DOMAIN: ${{ vars.ACCESS_LOG_DOMAIN || 'veda.grss-ieee.org' }}
+        run: |
+          OLDEST="${{ inputs.oldest }}"
+          [ -z "$OLDEST" ] && OLDEST=$(date -d '9 days ago' +%F)
+          OLDEST="$OLDEST" CHUNK_DAYS=7 OUT=logs.csv \
+            ./scripts/fetch-amplify-access-logs.sh
+
+      - name: Upload to S3
+        run: |
+          BUCKET=$(echo "${{ vars.PROJECT_NAME || 'GRSS-VEDA' }}-access-logs-${{ vars.STAGE }}" \
+            | tr '[:upper:]' '[:lower:]')
+          aws s3 cp logs.csv \
+            "s3://${BUCKET}/logs/pulled=$(date +%F)/access-logs.csv"
