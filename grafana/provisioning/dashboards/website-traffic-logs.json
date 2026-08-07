@@ -304,15 +304,94 @@
       ]
     },
     {
+      "id": 9,
+      "title": "Errors by page",
+      "description": "4xx and 5xx responses to visitor requests, grouped by page and status code. Bot traffic is excluded, so scanner probes for /.env and similar do not drown out real breakage.",
+      "type": "table",
+      "datasource": "Athena",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 29
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "regex",
+                    "options": {
+                      "pattern": "^5\\d\\d$",
+                      "result": {
+                        "color": "red",
+                        "index": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "regex",
+                    "options": {
+                      "pattern": "^4\\d\\d$",
+                      "result": {
+                        "color": "orange",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "Athena",
+          "format": 1,
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false
+          },
+          "rawSQL": "WITH logs AS (SELECT DISTINCT request_id, \"date\", uri_stem, status, useragent FROM access_logs) SELECT status, uri_stem AS page, count(*) AS requests FROM logs WHERE substr(status, 1, 1) IN ('4', '5') AND NOT regexp_like(useragent, '(?i)(bot|crawl|spider|scan|slurp|curl|wget|python|httpx|okhttp|scrapy|censys|netcraft|gpt|openai|anthropic|claude|facebookexternalhit|headless|dataprovider|internet-measurement|go-http|java|libwww|masscan|zgrab|nuclei|expanse|paloalto)') AND $__timeFilter(date_parse(\"date\", '%Y-%m-%d')) GROUP BY status, uri_stem ORDER BY requests DESC LIMIT 30"
+        }
+      ]
+    },
+    {
       "id": 6,
       "title": "External referrers",
       "description": "Where visitors arrive from. Most traffic is direct (no referrer) and not shown.",
       "type": "table",
       "datasource": "Athena",
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
-        "x": 0,
+        "x": 12,
         "y": 29
       },
       "fieldConfig": {
@@ -342,9 +421,9 @@
       "datasource": "Athena",
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 29
+        "w": 24,
+        "x": 0,
+        "y": 38
       },
       "fieldConfig": {
         "defaults": {},
