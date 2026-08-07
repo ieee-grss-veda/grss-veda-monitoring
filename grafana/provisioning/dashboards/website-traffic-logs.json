@@ -1,13 +1,23 @@
 {
   "uid": "website-traffic-logs",
   "title": "Website Traffic (Access Logs)",
-  "tags": ["amplify", "website", "athena", "provisioned"],
+  "tags": [
+    "amplify",
+    "website",
+    "athena",
+    "provisioned"
+  ],
   "timezone": "browser",
   "editable": false,
   "schemaVersion": 38,
   "refresh": "",
-  "time": { "from": "now-6M", "to": "now" },
-  "templating": { "list": [] },
+  "time": {
+    "from": "now-6M",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
   "panels": [
     {
       "id": 1,
@@ -15,11 +25,19 @@
       "description": "Distinct visitor IPs per day; bots excluded by user-agent heuristic. IP-based, so treat as an approximation.",
       "type": "timeseries",
       "datasource": "Athena",
-      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "custom": { "drawStyle": "bars", "fillOpacity": 60 }
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 60
+          }
         },
         "overrides": []
       },
@@ -28,7 +46,12 @@
           "refId": "A",
           "datasource": "Athena",
           "format": 0,
-          "connectionArgs": { "catalog": "__default", "database": "__default", "region": "__default", "resultReuseEnabled": false },
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false
+          },
           "rawSQL": "WITH logs AS (SELECT DISTINCT request_id, \"date\", c_ip, useragent FROM access_logs) SELECT date_parse(\"date\", '%Y-%m-%d') AS time, count(DISTINCT c_ip) AS visitors FROM logs WHERE NOT regexp_like(useragent, '(?i)(bot|crawl|spider|scan|slurp|curl|wget|python|httpx|okhttp|scrapy|censys|netcraft|gpt|openai|anthropic|claude|facebookexternalhit|headless|dataprovider|internet-measurement|go-http|java|libwww|masscan|zgrab|nuclei|expanse|paloalto)') AND $__timeFilter(date_parse(\"date\", '%Y-%m-%d')) GROUP BY 1 ORDER BY 1"
         }
       ]
@@ -39,20 +62,53 @@
       "description": "All requests per day split by user-agent heuristic.",
       "type": "timeseries",
       "datasource": "Athena",
-      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } }
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "bot" },
-            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }]
+            "matcher": {
+              "id": "byName",
+              "options": "bot"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
           },
           {
-            "matcher": { "id": "byName", "options": "human" },
-            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }]
+            "matcher": {
+              "id": "byName",
+              "options": "human"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
           }
         ]
       },
@@ -61,8 +117,127 @@
           "refId": "A",
           "datasource": "Athena",
           "format": 0,
-          "connectionArgs": { "catalog": "__default", "database": "__default", "region": "__default", "resultReuseEnabled": false },
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false
+          },
           "rawSQL": "WITH logs AS (SELECT DISTINCT request_id, \"date\", useragent FROM access_logs) SELECT date_parse(\"date\", '%Y-%m-%d') AS time, count(CASE WHEN NOT regexp_like(useragent, '(?i)(bot|crawl|spider|scan|slurp|curl|wget|python|httpx|okhttp|scrapy|censys|netcraft|gpt|openai|anthropic|claude|facebookexternalhit|headless|dataprovider|internet-measurement|go-http|java|libwww|masscan|zgrab|nuclei|expanse|paloalto)') THEN 1 END) AS human, count(CASE WHEN regexp_like(useragent, '(?i)(bot|crawl|spider|scan|slurp|curl|wget|python|httpx|okhttp|scrapy|censys|netcraft|gpt|openai|anthropic|claude|facebookexternalhit|headless|dataprovider|internet-measurement|go-http|java|libwww|masscan|zgrab|nuclei|expanse|paloalto)') THEN 1 END) AS bot FROM logs WHERE $__timeFilter(date_parse(\"date\", '%Y-%m-%d')) GROUP BY 1 ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Where visitors connect from",
+      "description": "Request density at the CloudFront edges that served visitors, weighted by volume. Edges sit near visitors but are not their exact location; see the table below for counts.",
+      "type": "geomap",
+      "datasource": "Athena",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "view": {
+          "id": "zero",
+          "lat": 15,
+          "lon": 0,
+          "zoom": 1.4
+        },
+        "controls": {
+          "showZoom": true,
+          "mouseWheelZoom": false,
+          "showAttribution": true,
+          "showScale": false,
+          "showMeasure": false,
+          "showDebug": false
+        },
+        "basemap": {
+          "type": "default",
+          "name": "Basemap",
+          "config": {}
+        },
+        "tooltip": {
+          "mode": "details"
+        },
+        "layers": [
+          {
+            "type": "heatmap",
+            "name": "Request density",
+            "tooltip": true,
+            "location": {
+              "mode": "lookup",
+              "lookup": "edge",
+              "gazetteer": "public/gazetteer/airports.geojson"
+            },
+            "config": {
+              "weight": {
+                "field": "requests",
+                "fixed": 1,
+                "min": 0,
+                "max": 1
+              },
+              "radius": 18,
+              "blur": 22
+            }
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "Athena",
+          "format": 1,
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false
+          },
+          "rawSQL": "WITH logs AS (SELECT DISTINCT request_id, \"date\", edge_location, useragent FROM access_logs) SELECT substr(edge_location, 1, 3) AS edge, count(*) AS requests FROM logs WHERE NOT regexp_like(useragent, '(?i)(bot|crawl|spider|scan|slurp|curl|wget|python|httpx|okhttp|scrapy|censys|netcraft|gpt|openai|anthropic|claude|facebookexternalhit|headless|dataprovider|internet-measurement|go-http|java|libwww|masscan|zgrab|nuclei|expanse|paloalto)') AND $__timeFilter(date_parse(\"date\", '%Y-%m-%d')) GROUP BY 1 ORDER BY requests DESC LIMIT 15"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Edge locations (exact counts)",
+      "description": "Nearest CloudFront edge (IATA airport code) \u2014 a rough proxy for visitor geography.",
+      "type": "table",
+      "datasource": "Athena",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "Athena",
+          "format": 1,
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false
+          },
+          "rawSQL": "WITH logs AS (SELECT DISTINCT request_id, \"date\", edge_location, useragent FROM access_logs) SELECT substr(edge_location, 1, 3) AS edge, count(*) AS requests FROM logs WHERE NOT regexp_like(useragent, '(?i)(bot|crawl|spider|scan|slurp|curl|wget|python|httpx|okhttp|scrapy|censys|netcraft|gpt|openai|anthropic|claude|facebookexternalhit|headless|dataprovider|internet-measurement|go-http|java|libwww|masscan|zgrab|nuclei|expanse|paloalto)') AND $__timeFilter(date_parse(\"date\", '%Y-%m-%d')) GROUP BY 1 ORDER BY requests DESC LIMIT 15"
         }
       ]
     },
@@ -72,33 +247,107 @@
       "description": "Successful page loads by visitors; assets and known probe paths excluded.",
       "type": "table",
       "datasource": "Athena",
-      "gridPos": { "h": 9, "w": 8, "x": 0, "y": 9 },
-      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
           "datasource": "Athena",
           "format": 1,
-          "connectionArgs": { "catalog": "__default", "database": "__default", "region": "__default", "resultReuseEnabled": false },
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false
+          },
           "rawSQL": "WITH logs AS (SELECT DISTINCT request_id, \"date\", uri_stem, status, useragent FROM access_logs) SELECT uri_stem AS page, count(*) AS views FROM logs WHERE NOT regexp_like(useragent, '(?i)(bot|crawl|spider|scan|slurp|curl|wget|python|httpx|okhttp|scrapy|censys|netcraft|gpt|openai|anthropic|claude|facebookexternalhit|headless|dataprovider|internet-measurement|go-http|java|libwww|masscan|zgrab|nuclei|expanse|paloalto)') AND substr(status, 1, 1) IN ('2', '3') AND NOT regexp_like(uri_stem, '(?i)\\.(js|css|png|jpe?g|svg|ico|woff2?|ttf|map|json|webp|gif|txt|xml)$') AND uri_stem <> '/ip' AND $__timeFilter(date_parse(\"date\", '%Y-%m-%d')) GROUP BY uri_stem ORDER BY views DESC LIMIT 15"
         }
       ]
     },
     {
-      "id": 4,
-      "title": "Visitor edge locations",
-      "description": "Nearest CloudFront edge (IATA airport code) — a rough proxy for visitor geography.",
+      "id": 9,
+      "title": "Errors by page",
+      "description": "4xx and 5xx responses to visitor requests, grouped by page and status code. Bot traffic is excluded, so scanner probes for /.env and similar do not drown out real breakage.",
       "type": "table",
       "datasource": "Athena",
-      "gridPos": { "h": 9, "w": 8, "x": 8, "y": 9 },
-      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "regex",
+                    "options": {
+                      "pattern": "^5\\d\\d$",
+                      "result": {
+                        "color": "red",
+                        "index": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "regex",
+                    "options": {
+                      "pattern": "^4\\d\\d$",
+                      "result": {
+                        "color": "orange",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
       "targets": [
         {
           "refId": "A",
           "datasource": "Athena",
           "format": 1,
-          "connectionArgs": { "catalog": "__default", "database": "__default", "region": "__default", "resultReuseEnabled": false },
-          "rawSQL": "WITH logs AS (SELECT DISTINCT request_id, \"date\", edge_location, useragent FROM access_logs) SELECT substr(edge_location, 1, 3) AS edge, count(*) AS requests FROM logs WHERE NOT regexp_like(useragent, '(?i)(bot|crawl|spider|scan|slurp|curl|wget|python|httpx|okhttp|scrapy|censys|netcraft|gpt|openai|anthropic|claude|facebookexternalhit|headless|dataprovider|internet-measurement|go-http|java|libwww|masscan|zgrab|nuclei|expanse|paloalto)') AND $__timeFilter(date_parse(\"date\", '%Y-%m-%d')) GROUP BY 1 ORDER BY requests DESC LIMIT 15"
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false
+          },
+          "rawSQL": "WITH logs AS (SELECT DISTINCT request_id, \"date\", uri_stem, status, useragent FROM access_logs) SELECT status, uri_stem AS page, count(*) AS requests FROM logs WHERE substr(status, 1, 1) IN ('4', '5') AND NOT regexp_like(useragent, '(?i)(bot|crawl|spider|scan|slurp|curl|wget|python|httpx|okhttp|scrapy|censys|netcraft|gpt|openai|anthropic|claude|facebookexternalhit|headless|dataprovider|internet-measurement|go-http|java|libwww|masscan|zgrab|nuclei|expanse|paloalto)') AND $__timeFilter(date_parse(\"date\", '%Y-%m-%d')) GROUP BY status, uri_stem ORDER BY requests DESC LIMIT 30"
         }
       ]
     },
@@ -108,14 +357,27 @@
       "description": "Response status distribution for non-bot requests.",
       "type": "table",
       "datasource": "Athena",
-      "gridPos": { "h": 9, "w": 8, "x": 16, "y": 9 },
-      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
           "datasource": "Athena",
           "format": 1,
-          "connectionArgs": { "catalog": "__default", "database": "__default", "region": "__default", "resultReuseEnabled": false },
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false
+          },
           "rawSQL": "WITH logs AS (SELECT DISTINCT request_id, \"date\", status, useragent FROM access_logs) SELECT status, count(*) AS requests FROM logs WHERE NOT regexp_like(useragent, '(?i)(bot|crawl|spider|scan|slurp|curl|wget|python|httpx|okhttp|scrapy|censys|netcraft|gpt|openai|anthropic|claude|facebookexternalhit|headless|dataprovider|internet-measurement|go-http|java|libwww|masscan|zgrab|nuclei|expanse|paloalto)') AND $__timeFilter(date_parse(\"date\", '%Y-%m-%d')) GROUP BY status ORDER BY requests DESC"
         }
       ]
@@ -126,14 +388,27 @@
       "description": "Where visitors arrive from. Most traffic is direct (no referrer) and not shown.",
       "type": "table",
       "datasource": "Athena",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
-      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": {
+        "h": 8,
+        "w": 9,
+        "x": 6,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
           "datasource": "Athena",
           "format": 1,
-          "connectionArgs": { "catalog": "__default", "database": "__default", "region": "__default", "resultReuseEnabled": false },
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false
+          },
           "rawSQL": "WITH logs AS (SELECT DISTINCT request_id, \"date\", referer, useragent FROM access_logs) SELECT referer, count(*) AS requests FROM logs WHERE referer NOT IN ('-', '') AND referer NOT LIKE '%veda.grss-ieee.org%' AND referer NOT LIKE '%localhost%' AND NOT regexp_like(useragent, '(?i)(bot|crawl|spider|scan|slurp|curl|wget|python|httpx|okhttp|scrapy|censys|netcraft|gpt|openai|anthropic|claude|facebookexternalhit|headless|dataprovider|internet-measurement|go-http|java|libwww|masscan|zgrab|nuclei|expanse|paloalto)') AND $__timeFilter(date_parse(\"date\", '%Y-%m-%d')) GROUP BY referer ORDER BY requests DESC LIMIT 10"
         }
       ]
@@ -144,14 +419,27 @@
       "description": "Raw user-agent strings classified as bots, by request volume.",
       "type": "table",
       "datasource": "Athena",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
-      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": {
+        "h": 8,
+        "w": 9,
+        "x": 15,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
           "datasource": "Athena",
           "format": 1,
-          "connectionArgs": { "catalog": "__default", "database": "__default", "region": "__default", "resultReuseEnabled": false },
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false
+          },
           "rawSQL": "WITH logs AS (SELECT DISTINCT request_id, \"date\", useragent FROM access_logs) SELECT useragent, count(*) AS requests FROM logs WHERE regexp_like(useragent, '(?i)(bot|crawl|spider|scan|slurp|curl|wget|python|httpx|okhttp|scrapy|censys|netcraft|gpt|openai|anthropic|claude|facebookexternalhit|headless|dataprovider|internet-measurement|go-http|java|libwww|masscan|zgrab|nuclei|expanse|paloalto)') AND $__timeFilter(date_parse(\"date\", '%Y-%m-%d')) GROUP BY useragent ORDER BY requests DESC LIMIT 10"
         }
       ]
